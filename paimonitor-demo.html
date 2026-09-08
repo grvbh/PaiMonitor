@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PaiMonitor — Dashboard Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4efe1;
+    --panel: #ffffff;
+    --border: #e4dcc7;
+    --border-soft: #eee5cf;
+    --ink: #2b2620;
+    --muted: #8a8070;
+    --muted-soft: #5c5343;
+    --green: #2f4a2f;
+    --green-mid: #3f6b3f;
+    --yellow: #e8b923;
+    --rust: #9a4a2b;
+    --brown: #5b4636;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  h1, h2, h3, .display { font-family: 'Fraunces', Georgia, serif; }
+  button { font-family: inherit; }
+  .hidden { display: none !important; }
+
+  /* ---------- Login ---------- */
+  #login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .login-card {
+    display: flex; max-width: 880px; width: 100%; background: #fff;
+    border-radius: 4px; overflow: hidden; box-shadow: 0 1px 3px rgba(59,46,26,0.12);
+  }
+  .login-left {
+    flex: 1 1 45%; background: var(--green); color: var(--bg); padding: 48px 40px;
+    display: flex; flex-direction: column; justify-content: space-between; min-height: 420px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 40px; }
+  .brand-mark {
+    width: 34px; height: 34px; border-radius: 4px; background: var(--yellow);
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+  }
+  .login-left h1 { font-weight: 600; font-size: 34px; line-height: 1.15; margin: 0; }
+  .login-left p { opacity: 0.75; margin-top: 16px; font-size: 14px; line-height: 1.6; max-width: 280px; }
+  .login-right { flex: 1 1 55%; padding: 48px 44px; }
+  .login-right h2 { font-size: 22px; margin: 0 0 6px; }
+  .login-right > p { color: var(--muted); font-size: 13px; margin: 0 0 28px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; color: #6b6252; margin-bottom: 6px; }
+  .field input {
+    width: 100%; padding: 10px 12px; border: 1px solid #ded4bd; border-radius: 3px;
+    font-size: 14px; outline: none;
+  }
+  .btn-row { display: flex; gap: 10px; margin-top: 28px; }
+  .btn-primary, .btn-secondary {
+    flex: 1; padding: 11px 14px; border-radius: 3px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .btn-primary { background: var(--green); color: var(--bg); border: none; }
+  .btn-secondary { background: #fff; color: var(--green); border: 1px solid var(--green); }
+
+  /* ---------- Shared dashboard chrome ---------- */
+  .topbar {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    padding: 28px 36px 20px; border-bottom: 1px solid var(--border);
+  }
+  .topbar .brand { margin-bottom: 6px; }
+  .topbar .brand span { font-size: 12px; color: var(--muted); }
+  .topbar .brand-mark { width: 22px; height: 22px; font-size: 12px; }
+  .topbar h1 { font-size: 26px; margin: 0; }
+  .topbar .subtitle { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .signout {
+    background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; padding-bottom: 4px;
+  }
+  .page-body { padding: 24px 36px; display: flex; flex-direction: column; gap: 18px; }
+  .panel { background: var(--panel); border-radius: 4px; padding: 20px; border: 1px solid var(--border); }
+  .panel h3.title { font-size: 16px; margin: 0 0 12px; font-weight: 600; }
+  .grid-2 { display: grid; grid-template-columns: 300px 1fr; gap: 18px; }
+  .grid-2-admin { display: grid; grid-template-columns: 1fr 320px; gap: 18px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  @media (max-width: 860px) {
+    .grid-2, .grid-2-admin, .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  /* device list */
+  .device-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 8px; border: none;
+    background: transparent; border-radius: 3px; cursor: pointer; text-align: left; width: 100%;
+  }
+  .device-item.selected { background: var(--bg); }
+  .device-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .device-name { font-size: 13px; font-weight: 600; }
+  .device-meta { font-size: 11px; color: var(--muted); }
+
+  /* field map */
+  .field-map { background: #eef0df; border-radius: 4px; overflow: hidden; border: 1px solid #dde1c9; }
+  .field-map svg { width: 100%; height: 280px; display: block; }
+  .map-pin { cursor: pointer; }
+
+  /* stat cards */
+  .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .stat-value { font-size: 26px; font-weight: 600; }
+
+  /* chart */
+  .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .toggle-group button {
+    padding: 5px 11px; font-size: 12px; border-radius: 3px; cursor: pointer;
+    border: 1px solid #ded4bd; background: #fff; color: #5c5343; margin-left: 4px;
+  }
+  .toggle-group button.active { background: var(--green); color: var(--bg); border-color: var(--green); }
+  .legend { display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap; font-size: 12px; color: var(--muted-soft); }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: -1px; }
+
+  /* admin table */
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+  thead td { color: var(--muted); font-weight: 500; font-size: 11px; padding: 6px 8px; }
+  tbody tr { cursor: pointer; }
+  tbody tr.selected { background: var(--bg); }
+  tbody td { padding: 9px 8px; border-top: 1px solid var(--border-soft); }
+  .status-pill { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+  .status-active { background: #e6efe1; color: var(--green-mid); }
+  .status-off { background: #f0ece0; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-left">
+      <div>
+        <div class="brand"><div class="brand-mark">🐛</div><span class="display" style="font-size:20px">PaiMonitor</span></div>
+        <h1>Every trap,<br>watched around<br>the clock.</h1>
+        <p>Hourly sticky-trap images from your field, read by a model trained on tomato pests, turned into a count you can act on.</p>
+      </div>
+      <div style="font-size:12px; opacity:0.55;">Demo build — mock data, no real devices</div>
+    </div>
+    <div class="login-right">
+      <h2>Sign in</h2>
+      <p>This demo skips real authentication — pick a view below.</p>
+      <div class="field"><label>Email</label><input placeholder="you@field.farm" /></div>
+      <div class="field"><label>Password</label><input type="password" placeholder="••••••••" /></div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="enter('farmer')">Continue as Farmer</button>
+        <button class="btn-secondary" onclick="enter('admin')">Continue as Admin</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= FARMER VIEW ================= -->
+<div id="farmer-view" class="hidden">
+  <div class="topbar">
+    <div>
+      <div class="brand"><div class="brand-mark">🐛</div><span>PaiMonitor</span></div>
+      <h1>Ramesh's Fields</h1>
+      <p class="subtitle">Sirhind, Punjab</p>
+    </div>
+    <button class="signout" onclick="signOut()">Sign out</button>
+  </div>
+  <div class="page-body">
+    <div class="grid-2">
+      <div class="panel">
+        <h3 class="title">My devices</h3>
+        <div id="farmer-device-list"></div>
+      </div>
+      <div class="panel">
+        <h3 class="title">Field map</h3>
+        <div class="field-map" id="farmer-map"></div>
+      </div>
+    </div>
+    <div class="grid-4" id="farmer-stats"></div>
+    <div class="panel">
+      <div class="chart-header">
+        <h3 class="title" style="margin:0">Insect density</h3>
+        <div class="toggle-group" id="farmer-gran"></div>
+      </div>
+      <svg id="farmer-chart" viewBox="0 0 600 240" style="width:100%; height:260px;"></svg>
+      <div class="legend" id="farmer-legend"></div>
+    </div>
+    <div class="panel">
+      <h3 class="title" id="farmer-device-title">Device status</h3>
+      <div style="display:flex; gap:24px; font-size:13px; color:var(--muted-soft);" id="farmer-status"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADMIN VIEW ================= -->
+<div id="admin-view" class="hidden">
+  <div class="topbar">
+    <div>
+      <div class="brand"><div class="brand-mark">🐛</div><span>PaiMonitor</span></div>
+      <h1>All devices</h1>
+      <p class="subtitle" id="admin-subtitle"></p>
+    </div>
+    <button class="signout" onclick="signOut()">Sign out</button>
+  </div>
+  <div class="page-body">
+    <div class="grid-2-admin">
+      <div class="panel">
+        <h3 class="title">Registered devices</h3>
+        <table>
+          <thead><tr><td>Device</td><td>Farmer</td><td>Status</td><td>Last seen</td></tr></thead>
+          <tbody id="admin-table-body"></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h3 class="title">All farms</h3>
+        <div class="field-map" id="admin-map"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="chart-header">
+        <h3 class="title" style="margin:0">Insect density</h3>
+        <div class="toggle-group" id="admin-gran"></div>
+      </div>
+      <svg id="admin-chart" viewBox="0 0 600 240" style="width:100%; height:260px;"></svg>
+      <div class="legend" id="admin-legend"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =============================================================
+// Mock data — stands in for the FastAPI backend (/devices, /analytics/density, ...)
+// =============================================================
+const SPECIES = [
+  { key: "whitefly", label: "Whitefly", color: "#8a6d1f" },
+  { key: "aphid", label: "Aphid", color: "#3f6b3f" },
+  { key: "thrips", label: "Thrips", color: "#9a4a2b" },
+  { key: "leafminer", label: "Leafminer fly", color: "#5b4636" },
+];
+const FARMERS = [
+  { id: "f1", name: "Ramesh Kumar", village: "Sirhind, Punjab" },
+  { id: "f2", name: "Suresh Patel", village: "Anand, Gujarat" },
+];
+const DEVICES = [
+  { id: "d1", farmerId: "f1", name: "North Field Trap 1", serial: "PM-2201", crop: "Tomato", x: 28, y: 34, active: true, lastSeen: "12 min ago", temp: 31.2, hum: 58 },
+  { id: "d2", farmerId: "f1", name: "South Field Trap 2", serial: "PM-2202", crop: "Tomato", x: 62, y: 66, active: true, lastSeen: "40 min ago", temp: 30.6, hum: 61 },
+  { id: "d3", farmerId: "f2", name: "Greenhouse Trap A", serial: "PM-2214", crop: "Tomato", x: 45, y: 48, active: false, lastSeen: "1 day ago", temp: 28.9, hum: 66 },
+];
+
+function seeded(seed) { let s = seed; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+function buildSeries(seed, days = 30) {
+  const rand = seeded(seed); const points = []; const now = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const entry = { date: d.toISOString().slice(0, 10) };
+    SPECIES.forEach((s, idx) => {
+      const base = 4 + idx * 2, wave = Math.sin((i + idx * 4) / 4) * 3, noise = rand() * 4;
+      entry[s.key] = Math.max(0, Math.round(base + wave + noise));
+    });
+    points.push(entry);
+  }
+  return points;
+}
+const SERIES = Object.fromEntries(DEVICES.map((d, i) => [d.id, buildSeries(1000 + i * 77)]));
+
+function aggregate(points, gran) {
+  if (gran === "day") return points;
+  const bucketKey = (dateStr) => {
+    const d = new Date(dateStr);
+    if (gran === "week") {
+      const onejan = new Date(d.getFullYear(), 0, 1);
+      const week = Math.ceil(((d - onejan) / 86400000 + onejan.getDay() + 1) / 7);
+      return d.getFullYear() + "-W" + week;
+    }
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  };
+  const buckets = {};
+  points.forEach((p) => {
+    const key = bucketKey(p.date);
+    if (!buckets[key]) { buckets[key] = { date: key }; SPECIES.forEach((s) => buckets[key][s.key] = 0); }
+    SPECIES.forEach((s) => buckets[key][s.key] += p[s.key]);
+  });
+  return Object.values(buckets);
+}
+function totalFor(points) { return points.reduce((sum, p) => sum + SPECIES.reduce((s2, sp) => s2 + p[sp.key], 0), 0); }
+function topSpecies(points) {
+  return SPECIES.map((s) => ({ ...s, count: points.reduce((sum, p) => sum + p[s.key], 0) }))
+    .sort((a, b) => b.count - a.count);
+}
+
+// =============================================================
+// Tiny inline SVG line-chart renderer (no external chart lib)
+// =============================================================
+function renderChart(svgId, points, gran) {
+  const data = aggregate(points, gran);
+  const svg = document.getElementById(svgId);
+  const W = 600, H = 240, padL = 34, padR = 10, padT = 10, padB = 26;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+
+  let maxY = 1;
+  data.forEach((p) => SPECIES.forEach((s) => { if (p[s.key] > maxY) maxY = p[s.key]; }));
+  maxY = Math.ceil(maxY * 1.15);
+
+  const x = (i) => padL + (innerW * i) / Math.max(1, data.length - 1);
+  const y = (v) => padT + innerH - (innerH * v) / maxY;
+
+  let svgContent = "";
+  for (let g = 0; g <= 4; g++) {
+    const gy = padT + (innerH * g) / 4;
+    svgContent += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (W - padR) + '" y2="' + gy + '" stroke="#e9e3d2" stroke-width="1"/>';
+    svgContent += '<text x="' + (padL - 8) + '" y="' + (gy + 3) + '" font-size="10" fill="#a89f8a" text-anchor="end">' + Math.round(maxY - (maxY * g) / 4) + '</text>';
+  }
+  const step = Math.max(1, Math.floor(data.length / 6));
+  data.forEach((p, i) => {
+    if (i % step === 0 || i === data.length - 1) {
+      svgContent += '<text x="' + x(i) + '" y="' + (H - 6) + '" font-size="10" fill="#a89f8a" text-anchor="middle">' + p.date.slice(5) + '</text>';
+    }
+  });
+  SPECIES.forEach((s) => {
+    let d = "";
+    data.forEach((p, i) => { d += (i === 0 ? "M" : "L") + x(i) + "," + y(p[s.key]) + " "; });
+    svgContent += '<path d="' + d + '" fill="none" stroke="' + s.color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+  });
+
+  svg.innerHTML = svgContent;
+}
+function renderLegend(elId) {
+  document.getElementById(elId).innerHTML = SPECIES.map(
+    (s) => '<span><span class="legend-dot" style="background:' + s.color + '"></span>' + s.label + '</span>'
+  ).join("");
+}
+
+// =============================================================
+// Field map renderer
+// =============================================================
+function renderMap(elId, devices, selectedId, onSelect) {
+  const el = document.getElementById(elId);
+  let pins = "";
+  devices.forEach((d) => {
+    const r = d.id === selectedId ? 4.2 : 3.2;
+    const fill = d.active ? "#e8b923" : "#b8ad92";
+    const ring = d.id === selectedId ? '<circle cx="' + d.x + '" cy="' + d.y + '" r="7" fill="none" stroke="#e8b923" stroke-width="0.6" opacity="0.5"/>' : "";
+    pins += '<g class="map-pin" onclick="' + onSelect + "('" + d.id + '\')">' +
+      '<circle cx="' + d.x + '" cy="' + d.y + '" r="' + r + '" fill="' + fill + '" stroke="#2f4a2f" stroke-width="' + (d.id === selectedId ? 1 : 0.4) + '"/>' +
+      ring + '</g>';
+  });
+  el.innerHTML = '<svg viewBox="0 0 100 80">' +
+    '<defs><pattern id="rows-' + elId + '" width="6" height="80" patternUnits="userSpaceOnUse"><rect width="3" height="80" fill="#e3e7cd"/></pattern></defs>' +
+    '<rect width="100" height="80" fill="url(#rows-' + elId + ')"/>' + pins + '</svg>';
+}
+
+// =============================================================
+// State + view wiring
+// =============================================================
+let farmerSelected = "d1";
+let farmerGran = "day";
+let adminSelected = "d1";
+let adminGran = "week";
+
+function enter(role) {
+  document.getElementById("login-screen").classList.add("hidden");
+  if (role === "farmer") {
+    document.getElementById("farmer-view").classList.remove("hidden");
+    renderFarmer();
+  } else {
+    document.getElementById("admin-view").classList.remove("hidden");
+    renderAdmin();
+  }
+}
+function signOut() {
+  document.getElementById("farmer-view").classList.add("hidden");
+  document.getElementById("admin-view").classList.add("hidden");
+  document.getElementById("login-screen").classList.remove("hidden");
+}
+function selectFarmerDevice(id) { farmerSelected = id; renderFarmer(); }
+function selectAdminDevice(id) { adminSelected = id; renderAdmin(); }
+function setFarmerGran(g) { farmerGran = g; renderFarmer(); }
+function setAdminGran(g) { adminGran = g; renderAdmin(); }
+
+function renderFarmer() {
+  const myDevices = DEVICES.filter((d) => d.farmerId === "f1");
+  const device = myDevices.find((d) => d.id === farmerSelected);
+  const points = SERIES[farmerSelected];
+  const total = totalFor(points);
+  const top = topSpecies(points)[0];
+
+  document.getElementById("farmer-device-list").innerHTML = myDevices.map((d) =>
+    '<button class="device-item ' + (d.id === farmerSelected ? 'selected' : '') + '" onclick="selectFarmerDevice(\'' + d.id + '\')">' +
+      '<span class="device-dot" style="background:' + (d.active ? '#4a7a4a' : '#b8ad92') + '"></span>' +
+      '<span style="flex:1"><div class="device-name">' + d.name + '</div><div class="device-meta">' + d.serial + ' · ' + d.crop + '</div></span>' +
+    '</button>').join("");
+
+  renderMap("farmer-map", myDevices, farmerSelected, "selectFarmerDevice");
+
+  document.getElementById("farmer-stats").innerHTML =
+    '<div class="panel"><div class="stat-label">Total detections (30d)</div><div class="stat-value">' + total + '</div></div>' +
+    '<div class="panel"><div class="stat-label">Most common pest</div><div class="stat-value" style="color:' + top.color + '">' + top.label + '</div></div>' +
+    '<div class="panel"><div class="stat-label">Field temperature</div><div class="stat-value">' + device.temp + '°C</div></div>' +
+    '<div class="panel"><div class="stat-label">Humidity</div><div class="stat-value">' + device.hum + '%</div></div>';
+
+  document.getElementById("farmer-gran").innerHTML = ["day", "week", "month"].map(
+    (g) => '<button class="' + (g === farmerGran ? 'active' : '') + '" onclick="setFarmerGran(\'' + g + '\')">Per ' + g + '</button>'
+  ).join("");
+  renderChart("farmer-chart", points, farmerGran);
+  renderLegend("farmer-legend");
+
+  document.getElementById("farmer-device-title").textContent = device.name + " — status";
+  document.getElementById("farmer-status").innerHTML =
+    '<div>📍 ' + (device.active ? "Active" : "Offline") + '</div>' +
+    '<div>Last image received: ' + device.lastSeen + '</div>' +
+    '<div>Captures hourly, daylight hours</div>';
+}
+
+function renderAdmin() {
+  document.getElementById("admin-subtitle").textContent = DEVICES.length + " devices across " + FARMERS.length + " farmers";
+
+  document.getElementById("admin-table-body").innerHTML = DEVICES.map((d) => {
+    const farmer = FARMERS.find((f) => f.id === d.farmerId);
+    return '<tr class="' + (d.id === adminSelected ? 'selected' : '') + '" onclick="selectAdminDevice(\'' + d.id + '\')">' +
+      '<td><div style="font-weight:600">' + d.name + '</div><div class="device-meta">' + d.serial + '</div></td>' +
+      '<td>' + farmer.name + '<br><span class="device-meta">' + farmer.village + '</span></td>' +
+      '<td><span class="status-pill ' + (d.active ? 'status-active' : 'status-off') + '">' + (d.active ? 'Active' : 'Offline') + '</span></td>' +
+      '<td style="color:var(--muted)">' + d.lastSeen + '</td>' +
+    '</tr>';
+  }).join("");
+
+  renderMap("admin-map", DEVICES, adminSelected, "selectAdminDevice");
+
+  document.getElementById("admin-gran").innerHTML = ["day", "week", "month"].map(
+    (g) => '<button class="' + (g === adminGran ? 'active' : '') + '" onclick="setAdminGran(\'' + g + '\')">Per ' + g + '</button>'
+  ).join("");
+  renderChart("admin-chart", SERIES[adminSelected], adminGran);
+  renderLegend("admin-legend");
+}
+</script>
+</body>
+</html>
